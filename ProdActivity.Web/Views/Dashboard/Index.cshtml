@@ -1,0 +1,395 @@
+﻿@model ProdActivity.Web.Models.DashboardViewModel
+
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <title>Dashboard</title>
+    <link rel="stylesheet" href="~/css/site.css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body, html {
+            height: 100%;
+            font-family: 'Segoe UI', sans-serif;
+            background-color: #f4f6f9;
+            scroll-behavior: smooth; /* Sayfa içi linkler için yumuşak kaydırma */
+        }
+
+        .wrapper {
+            display: flex;
+            height: 100vh;
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 25%;
+            max-width: 280px;
+            background-color: #1e1e2f;
+            color: white;
+            display: flex;
+            flex-direction: column;
+            padding: 25px;
+            position: fixed;
+            top: 0;
+            left: 0;
+            bottom: 0;
+        }
+
+            .sidebar h3 {
+                margin-bottom: 8px;
+                font-size: 20px;
+            }
+
+            .sidebar p {
+                font-size: 14px;
+                color: #ccc;
+                margin-bottom: 20px;
+            }
+
+            .sidebar hr {
+                border: none;
+                border-top: 1px solid #444;
+                margin-bottom: 20px;
+            }
+
+            .sidebar a {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                color: #bbb;
+                text-decoration: none;
+                padding: 12px 15px;
+                border-radius: 6px;
+                margin-bottom: 10px;
+                transition: all 0.3s;
+            }
+
+                .sidebar a:hover {
+                    background-color: #333;
+                    color: #fff;
+                }
+
+                .sidebar a i {
+                    width: 20px;
+                    text-align: center;
+                }
+
+        .main-content {
+            padding-top: 100px;
+            padding-left: 50px;
+            width: 100%;
+        }
+
+        .dashboard-title {
+            font-size: 28px;
+            margin-bottom: 30px;
+            color: #333;
+        }
+
+        .card-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-auto-rows: 1fr;
+            gap: 25px;
+        }
+
+        .card {
+            background-color: #fff;
+            border-radius: 14px;
+            padding: 20px 25px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.06);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform 0.2s ease;
+        }
+
+            .card:hover {
+                transform: translateY(-4px);
+            }
+
+            /* Kart başlıkları */
+            .card h3 {
+                display: flex;
+                align-items: center;
+                font-size: 18px;
+                font-weight: 600;
+                color: #2c3e50;
+                margin-bottom: 16px;
+                gap: 10px;
+            }
+
+            .card h2 {
+                font-size: 32px;
+                font-weight: 700;
+                color: #27ae60;
+            }
+
+            /* Liste kartı */
+            .card ul {
+                list-style: none;
+                padding-left: 0;
+            }
+
+                .card ul li {
+                    font-size: 15px;
+                    color: #555;
+                    margin-bottom: 8px;
+                    padding-left: 12px;
+                    position: relative;
+                }
+
+                    .card ul li::before {
+                        content: "•";
+                        color: #3498db;
+                        position: absolute;
+                        left: 0;
+                    }
+
+        canvas {
+            width: 100% !important;
+            height: 280px !important;
+            margin-top: 10px;
+        }
+
+        /* Her kartın konumu ve boyutu */
+        .card-avg {
+            grid-column: span 1;
+            grid-row: span 1;
+        }
+
+        .card-top-products {
+            grid-column: span 3;
+            grid-row: span 1;
+        }
+
+        .card-total {
+            grid-column: span 1;
+            grid-row: span 1;
+        }
+
+        .card-line-chart {
+            grid-column: span 5;
+            grid-row: span 2;
+        }
+
+        /* Son Ürün Kartı Stilleri */
+        .last-product-section {
+            margin-bottom: 30px;
+            padding: 25px;
+            background-color: #fff;
+            border-radius: 14px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+        }
+
+        .last-product-section > h3 { 
+            font-size: 20px;
+            font-weight: 600;
+            color: #2c3e50;
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .product-display-card {
+            border-radius: 10px;
+            padding: 20px;
+            position: relative;
+            min-height: 220px; 
+            display: flex;
+            flex-direction: column;
+            justify-content: center; 
+            align-items: center; 
+            background-color: #f9f9f9;
+            border: 1px solid #e0e0e0;
+        }
+
+        .product-display-card.bottle-detected {
+            border-left: 7px solid #27ae60; 
+        }
+
+        .product-display-card.not-bottle-detected {
+            border-left: 7px solid #e74c3c;
+        }
+
+        .product-info-label {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            font-size: 19px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .product-info-confidence {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 15px;
+            font-weight: 500;
+            color: #fff;
+            background-color: #3498db;
+            padding: 6px 12px;
+            border-radius: 20px; 
+        }
+
+        .product-info-icon {
+            font-size: 70px;
+            margin: 25px 0; 
+            text-align: center;
+        }
+
+        .product-display-card.bottle-detected .product-info-icon {
+            color: #27ae60; 
+        }
+
+        .product-display-card.not-bottle-detected .product-info-icon {
+            color: #e74c3c; 
+        }
+
+        .product-info-date {
+            position: absolute;
+            bottom: 15px;
+            left: 15px;
+            font-size: 14px;
+            color: #6c757d;
+        }
+        
+
+    </style>
+</head>
+<body>
+    <div class="wrapper">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <h3><i class="fas fa-user-circle"></i> @CurrentUser.User.Name</h3>
+            <p><i class="fas fa-user-tag"></i> Rol: @CurrentUser.User.UserRole?.Name</p>
+            <hr />
+            <a href="@Url.Action("Logout", "Account")"><i class="fas fa-sign-out-alt"></i> Çıkış</a>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <h1 class="dashboard-title">ProdActivity Dashboard</h1>
+
+            <!-- Son Algılanan Ürün Bölümü -->
+            <div id="last-product-display-section" class="last-product-section">
+                <h3><i class="fas fa-eye"></i> Son Algılanan Ürün</h3>
+                @{
+                    var lastDetection = Model.Detections?.OrderByDescending(d => d.CreatedAt).FirstOrDefault();
+                    if (lastDetection != null)
+                    {
+                        bool isBottle = lastDetection.Label?.Trim().Equals("bottle", StringComparison.OrdinalIgnoreCase) ?? false;
+                        string iconClass = isBottle ? "fas fa-bottle-water" : "fas fa-bottle-water";
+                        string cardSpecificClass = isBottle ? "bottle-detected" : "not-bottle-detected";
+                        <div class="product-display-card @cardSpecificClass">
+                            <span class="product-info-label">@lastDetection.Label</span>
+                            <span class="product-info-confidence">@lastDetection.Confidence.ToString("P0")</span>
+                            <div class="product-info-icon">
+                                <i class="@iconClass"></i>
+                            </div>
+                            <span class="product-info-date">@lastDetection.CreatedAt.ToString("dd.MM.yyyy HH:mm")</span>
+                        </div>
+                    }
+                    else
+                    {
+                        <div class="product-display-card">
+                             <p>Henüz bir ürün algılanmadı.</p>
+                        </div>
+                    }
+                }
+            </div>
+            <!-- Son Algılanan Ürün Bölümü Bitiş -->
+
+            <div class="card-grid">
+                <div class="card card-avg">
+                    <h3><i class="fas fa-percentage"></i> Ortalama Güven Faktörü</h3>
+                    <h2>@Model.AverageConfidence.ToString("P0")</h2>
+                </div>
+                <div class="card card-top-products">
+                    <h3><i class="fas fa-boxes"></i> En Çok Yakalanan Ürünler</h3>
+                    <ul>
+                        @foreach (var product in Model.MostDetectedProducts)
+                        {
+                            <li>@product.Label: @product.Confidence</li>
+                        }
+                    </ul>
+                </div>
+                <div class="card card-total">
+                    <h3><i class="fas fa-database"></i> Toplam Tespit</h3>
+                    <h2>@Model.Detections.Count()</h2>
+                </div>
+                <div class="card card-line-chart">
+                    <h3><i class="fas fa-chart-line"></i> Yakalanan Son Serinin Grafiği</h3>
+                    <canvas id="lineChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+
+    </div>
+
+    <script>
+        const lineLabels = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.Detections.OrderByDescending(d => d.CreatedAt).Take(6).Reverse().Select(d => d.CreatedAt.ToString("dd.MM.yyyy HH:mm"))));
+        const lineData = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.Detections.OrderByDescending(d => d.CreatedAt).Take(6).Reverse().Select(d => d.Confidence)));
+        const isNotBottle = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.Detections.OrderByDescending(d => d.CreatedAt).Take(6).Reverse().Select(d => d.Label != "bottle")));
+
+        const barLabels = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.MostDetectedProducts.Select(p => p.Label)));
+        const barData = @Html.Raw(Newtonsoft.Json.JsonConvert.SerializeObject(Model.MostDetectedProducts.Select(p => p.Confidence)));
+
+        new Chart(document.getElementById('lineChart'), {
+            type: 'line',
+            data: {
+                labels: lineLabels,
+                datasets: [{
+                    label: 'Güven Oranı',
+                    data: lineData,
+                    borderColor: 'rgba(75, 192, 192, 1)',
+                    borderWidth: 2,
+                    fill: false,
+                    pointBackgroundColor: function(context) {
+                        return isNotBottle[context.dataIndex] ? 'rgba(255, 0, 0, 1)' : 'rgba(40, 167, 69, 1)';
+                    },
+                    pointBorderColor: function(context) {
+                        return isNotBottle[context.dataIndex] ? 'rgba(255, 0, 0, 1)' : 'rgba(40, 167, 69, 1)';
+                    }
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+
+        new Chart(document.getElementById('barChart'), {
+            type: 'bar',
+            data: {
+                labels: barLabels,
+                datasets: [{
+                    label: 'Ürün Sayısı',
+                    data: barData,
+                    backgroundColor: 'rgba(153, 102, 255, 0.3)',
+                    borderColor: 'rgba(153, 102, 255, 1)',
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                scales: {
+                    y: { beginAtZero: true }
+                }
+            }
+        });
+    </script>
+</body>
+</html>
