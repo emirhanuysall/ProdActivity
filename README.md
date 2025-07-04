@@ -29,4 +29,4 @@ ProdActivity, üretim hatlarında manuel olarak yürütülen kalite kontrol sür
 
 ---
 
-*Görsel Programlama 2 dersi için geliştirilmiştir.* 
+*Görsel Programlama dersi için geliştirilmiştir.* 
